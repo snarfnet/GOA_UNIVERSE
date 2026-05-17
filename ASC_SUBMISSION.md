@@ -103,6 +103,7 @@ This build does not request App Tracking Transparency permission. Ads should run
 - Apple Developer Program membership.
 - Mac with Xcode 26 or later.
 - Bundle identifier `com.snarfnet.goauniverse` created in Apple Developer / App Store Connect.
+- App Store Connect app created with SKU `goa-universe-ios`.
 - Development team set in Xcode.
 - Google Mobile Ads Swift Package resolved in Xcode.
 - Archive uploaded from Xcode Organizer.
