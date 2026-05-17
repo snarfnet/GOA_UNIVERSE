@@ -16,6 +16,9 @@ Japanese
 Bundle ID:
 com.snarfnet.goauniverse
 
+Apple Developer Bundle ID resource ID:
+R24NJD2943
+
 SKU:
 goa-universe-ios
 
@@ -47,7 +50,7 @@ ASC_SUBMISSION.md
 
 ## Before Uploading a Build
 
-1. Register `com.snarfnet.goauniverse` in Apple Developer if it is not listed yet.
+1. Confirm `com.snarfnet.goauniverse` appears in App Store Connect. It was registered through the App Store Connect API.
 2. Open `GOA_UNIVERSE.xcodeproj` in Xcode.
 3. Set your Apple Team in Signing & Capabilities.
 4. Confirm bundle identifier is `com.snarfnet.goauniverse`.

@@ -8,6 +8,9 @@ GOA UNIVERSE
 Bundle ID:
 com.snarfnet.goauniverse
 
+Apple Developer Bundle ID resource ID:
+R24NJD2943
+
 Subtitle:
 Psychedelic Trance Generator
 
@@ -102,7 +105,7 @@ This build does not request App Tracking Transparency permission. Ads should run
 
 - Apple Developer Program membership.
 - Mac with Xcode 26 or later.
-- Bundle identifier `com.snarfnet.goauniverse` created in Apple Developer / App Store Connect.
+- Bundle identifier `com.snarfnet.goauniverse` created in Apple Developer. Resource ID: `R24NJD2943`.
 - App Store Connect app created with SKU `goa-universe-ios`.
 - Development team set in Xcode.
 - Google Mobile Ads Swift Package resolved in Xcode.
