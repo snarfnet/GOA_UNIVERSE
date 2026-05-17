@@ -5,7 +5,7 @@ on:
 
 jobs:
   upload:
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 60
 
     env:
@@ -38,7 +38,7 @@ jobs:
           CSR_PATH: ${{ runner.temp }}/dist.csr
           CERT_PATH: ${{ runner.temp }}/dist.cer
           PROFILE_PATH: ${{ runner.temp }}/profile.mobileprovision
-          PROFILE_NAME: GOA UNIVERSE App Store Profile
+          PROFILE_NAME: GOA UNIVERSE App Store Profile ${{ github.run_id }}
         run: |
           cp "$HOME/.appstoreconnect/private_keys/AuthKey_${APP_STORE_CONNECT_API_KEY_ID}.p8" "$ASC_KEY_PATH"
           openssl genrsa -out "$RUNNER_TEMP/dist.key" 2048
