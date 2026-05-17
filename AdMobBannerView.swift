@@ -6,7 +6,7 @@ struct AdMobBannerView: UIViewRepresentable {
     private let adUnitID = "ca-app-pub-9404799280370656/6826864464"
 
     func makeUIView(context: Context) -> BannerView {
-        let bannerView = BannerView(adSize: largeAnchoredAdaptiveBanner(width: 320))
+        let bannerView = BannerView(adSize: AdSizeBanner)
         bannerView.adUnitID = adUnitID
         bannerView.rootViewController = UIApplication.shared.connectedScenes
             .compactMap { $0 as? UIWindowScene }

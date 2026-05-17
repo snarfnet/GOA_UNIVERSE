@@ -142,10 +142,10 @@ final class AudioAnalyzer: NSObject, ObservableObject {
         guard windowSize > 0 else { return [] }
 
         let maxBin = windowSize / 2
-        let stride = max(1, maxBin / 96)
+        let binStride = max(1, maxBin / 96)
         var output: [(Float, Float)] = []
 
-        for bin in stride(from: 1, to: maxBin, by: stride) {
+        for bin in stride(from: 1, to: maxBin, by: binStride) {
             var real: Float = 0
             var imaginary: Float = 0
 
