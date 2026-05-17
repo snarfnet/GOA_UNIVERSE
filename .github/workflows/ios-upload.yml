@@ -46,6 +46,7 @@ jobs:
           python3 scripts/create_signing_assets.py
           openssl x509 -inform DER -in "$CERT_PATH" -out "$RUNNER_TEMP/dist.pem"
           openssl pkcs12 -export \
+            -legacy \
             -inkey "$RUNNER_TEMP/dist.key" \
             -in "$RUNNER_TEMP/dist.pem" \
             -out "$RUNNER_TEMP/dist.p12" \
