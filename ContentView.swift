@@ -256,7 +256,7 @@ struct ContentView: View {
             }
         }
 
-        MobileAds.shared.start()
+        await MobileAds.shared.start()
         adsReady = true
     }
 }
