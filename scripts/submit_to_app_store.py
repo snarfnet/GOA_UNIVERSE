@@ -386,9 +386,25 @@ def create_review_item(submission_id: str) -> None:
     try:
         api("POST", "/reviewSubmissionItems", body)
     except RuntimeError as exc:
-        if "ENTITY_ERROR.ATTRIBUTE.INVALID" in str(exc) and "already" in str(exc).lower():
+        message = str(exc).lower()
+        if "already" in message or "does not allow adding more items" in message:
             return
         raise
+
+
+def resolve_rejected_items(submission_id: str) -> None:
+    response = api("GET", f"/reviewSubmissions/{submission_id}/items?limit=50")
+    for item in response.json().get("data", []):
+        if item.get("attributes", {}).get("state") != "REJECTED":
+            continue
+        body = {
+            "data": {
+                "type": "reviewSubmissionItems",
+                "id": item["id"],
+                "attributes": {"resolved": True},
+            }
+        }
+        api("PATCH", f"/reviewSubmissionItems/{item['id']}", body)
 
 
 def submit_review(submission_id: str) -> None:
@@ -430,6 +446,7 @@ def main() -> None:
     submission_id = create_review_submission()
     print(f"Review submission: {submission_id}")
     create_review_item(submission_id)
+    resolve_rejected_items(submission_id)
     submit_review(submission_id)
     print("Submitted for review.")
 
