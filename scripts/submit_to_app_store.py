@@ -18,7 +18,8 @@ APP_ID = os.environ.get("ASC_APP_ID", "6770217114")
 VERSION_ID = os.environ.get("ASC_VERSION_ID", "b79c5ee5-8eb6-4131-aacc-a533b9052e17")
 LOCALIZATION_ID = os.environ.get("ASC_VERSION_LOCALIZATION_ID", "b7185697-67f3-4b30-8e77-296fc76b1fd2")
 SCREENSHOT_PATH = Path(os.environ.get("ASC_SCREENSHOT_PATH", r"C:\Users\Windows\GOA_UNIVERSE\AppStore\Screenshots\iphone65-1.png"))
-BUILD_ID = os.environ.get("ASC_BUILD_ID", "0aa8a112-3e0c-4c7e-8864-cc1f13031561")
+BUILD_ID = os.environ.get("ASC_BUILD_ID")
+BUILD_NUMBER = os.environ.get("ASC_BUILD_NUMBER", "2")
 AGE_RATING_ID = os.environ.get("ASC_AGE_RATING_ID", "00ca3f57-d891-4389-b8ef-812dd9c24867")
 
 
@@ -83,7 +84,7 @@ def patch_version_metadata() -> None:
             "id": VERSION_ID,
             "attributes": {
                 "copyright": "© 2026 snarfnet",
-                "usesIdfa": False,
+                "usesIdfa": True,
                 "releaseType": "AFTER_APPROVAL",
             },
         }
@@ -103,18 +104,40 @@ def patch_app_metadata() -> None:
 
 
 def patch_build_metadata() -> None:
+    build_id = get_build_id()
     body = {
         "data": {
             "type": "builds",
-            "id": BUILD_ID,
+            "id": build_id,
             "attributes": {"usesNonExemptEncryption": False},
         }
     }
     try:
-        api("PATCH", f"/builds/{BUILD_ID}", body)
+        api("PATCH", f"/builds/{build_id}", body)
     except RuntimeError as exc:
         if "usesNonExemptEncryption" not in str(exc):
             raise
+
+
+def get_build_id() -> str:
+    if BUILD_ID:
+        return BUILD_ID
+
+    for _ in range(60):
+        response = api("GET", f"/builds?filter[app]={APP_ID}&sort=-uploadedDate&limit=10")
+        for item in response.json().get("data", []):
+            attributes = item.get("attributes", {})
+            if attributes.get("version") == BUILD_NUMBER and attributes.get("processingState") == "VALID":
+                return item["id"]
+        print(f"Waiting for build {BUILD_NUMBER} to finish processing...")
+        time.sleep(30)
+    raise RuntimeError(f"Build {BUILD_NUMBER} did not become VALID in time.")
+
+
+def assign_build_to_version() -> None:
+    build_id = get_build_id()
+    body = {"data": {"type": "builds", "id": build_id}}
+    api("PATCH", f"/appStoreVersions/{VERSION_ID}/relationships/build", body, ok=(204,))
 
 
 def patch_age_rating() -> None:
@@ -158,7 +181,7 @@ def ensure_review_detail() -> None:
         "contactEmail": "snarfnet@gmail.com",
         "contactPhone": "+81 80 2368 9194",
         "demoAccountRequired": False,
-        "notes": "Music generator app. No account needed. The app analyzes a selected audio file on device and generates a Goa trance pattern. Ads are shown with Google AdMob.",
+        "notes": "Music generator app. No account needed. The app analyzes a selected audio file on device and generates a Goa trance pattern. The App Tracking Transparency permission request appears on launch before the Google AdMob banner loads.",
     }
     existing = api("GET", f"/appStoreVersions/{VERSION_ID}/appStoreReviewDetail")
     current = existing.json().get("data")
@@ -385,6 +408,7 @@ def main() -> None:
 
     patch_version_metadata()
     patch_app_metadata()
+    assign_build_to_version()
     patch_build_metadata()
     patch_age_rating()
     ensure_review_detail()

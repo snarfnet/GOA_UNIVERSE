@@ -1,5 +1,7 @@
 import SwiftUI
 import UniformTypeIdentifiers
+import AppTrackingTransparency
+import GoogleMobileAds
 
 struct ContentView: View {
     @StateObject private var analyzer = AudioAnalyzer()
@@ -7,6 +9,7 @@ struct ContentView: View {
     @State private var selectedAudioURL: URL?
     @State private var showFilePicker = false
     @State private var selectedEmotion: Emotion = .melancholic
+    @State private var adsReady = false
 
     private let cyan = Color(red: 0.25, green: 0.95, blue: 0.88)
     private let gold = Color(red: 1.0, green: 0.78, blue: 0.22)
@@ -37,11 +40,16 @@ struct ContentView: View {
 
             VStack {
                 Spacer()
-                AdMobBannerView()
-                    .frame(width: 320, height: 50)
-                    .background(Color.black.opacity(0.48))
+                if adsReady {
+                    AdMobBannerView()
+                        .frame(width: 320, height: 50)
+                        .background(Color.black.opacity(0.48))
+                }
             }
             .ignoresSafeArea(.keyboard, edges: .bottom)
+        }
+        .task {
+            await prepareAds()
         }
         .fileImporter(
             isPresented: $showFilePicker,
@@ -233,6 +241,23 @@ struct ContentView: View {
         if case .success(let url) = result {
             selectedAudioURL = url
         }
+    }
+
+    @MainActor
+    private func prepareAds() async {
+        guard !adsReady else { return }
+
+        if #available(iOS 14, *) {
+            try? await Task.sleep(nanoseconds: 500_000_000)
+            await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+                ATTrackingManager.requestTrackingAuthorization { _ in
+                    continuation.resume()
+                }
+            }
+        }
+
+        MobileAds.shared.start()
+        adsReady = true
     }
 }
 

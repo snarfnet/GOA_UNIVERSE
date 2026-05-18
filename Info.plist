@@ -26,6 +26,8 @@
 	<true/>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>GOA UNIVERSE uses audio playback and analysis to generate trance patterns.</string>
+	<key>NSUserTrackingUsageDescription</key>
+	<string>This identifier will be used to deliver personalized ads.</string>
 	<key>SKAdNetworkItems</key>
 	<array>
 		<dict>
