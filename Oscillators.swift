@@ -172,6 +172,11 @@ final class PadOscillator {
 }
 
 final class DrumSynthesizer {
+    private var noiseState: UInt32 = 0x13579BDF
+    private func noiseSample() -> Float {
+        noiseState = noiseState &* 1664525 &+ 1013904223
+        return Float(Double(noiseState) / Double(UInt32.max) * 2 - 1)
+    }
     private var kickDecay: Double = 0.42
     private var snareDecay: Double = 0.24
     private var hihatDecay: Double = 0.1
@@ -237,7 +242,7 @@ final class DrumSynthesizer {
             snareActive = false
         }
 
-        return Float.random(in: -1...1) * Float(envelope) * 0.38
+        return noiseSample() * Float(envelope) * 0.38
     }
 
     func generateHihatSample() -> Float {
@@ -250,7 +255,7 @@ final class DrumSynthesizer {
             hihatActive = false
         }
 
-        let noise = Float.random(in: -1...1)
+        let noise = noiseSample()
         return (noise - noise * 0.18) * Float(envelope) * 0.28
     }
 }

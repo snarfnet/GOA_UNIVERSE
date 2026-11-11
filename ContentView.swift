@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import UniformTypeIdentifiers
 import AppTrackingTransparency
 import GoogleMobileAds
@@ -10,6 +11,7 @@ struct ContentView: View {
     @State private var showFilePicker = false
     @State private var selectedEmotion: Emotion = .melancholic
     @State private var adsReady = false
+    @State private var shareSong = false
 
     private let cyan = Color(red: 0.25, green: 0.95, blue: 0.88)
     private let gold = Color(red: 1.0, green: 0.78, blue: 0.22)
@@ -22,6 +24,13 @@ struct ContentView: View {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 16) {
                     header
+                    GoaPanel(title: "FULL SONG · SOLSTICE SPIRAL") {
+                        Text("144 BPM · A minor · 3 minutes. A composed demo with intro, development, break, peak and outro. Uses the built-in synths; independent of the selected audio file.")
+                            .font(.caption).foregroundColor(.white)
+                        GoaButton(title: generator.isRenderingSong ? "RENDERING…" : "EXPORT FULL SONG WAV", color: gold, icon: "square.and.arrow.up") { generator.exportSong() }
+                            .disabled(generator.isRenderingSong)
+                        if let error = generator.songError { Text(error).foregroundColor(.red) }
+                    }
                     filePanel
                     analysisPanel
 
@@ -48,6 +57,8 @@ struct ContentView: View {
             }
             .ignoresSafeArea(.keyboard, edges: .bottom)
         }
+        .onChange(of: generator.songURL) { if $0 != nil { shareSong = true } }
+        .sheet(isPresented: $shareSong) { if let url = generator.songURL { SongShareSheet(url: url) } }
         .task {
             await prepareAds()
         }
@@ -422,4 +433,12 @@ private struct FrequencyBar: View {
 
 #Preview {
     ContentView()
+}
+
+private struct SongShareSheet: UIViewControllerRepresentable {
+    let url: URL
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: [url], applicationActivities: nil)
+    }
+    func updateUIViewController(_ controller: UIActivityViewController, context: Context) {}
 }

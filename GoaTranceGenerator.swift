@@ -3,6 +3,23 @@ import AudioToolbox
 import Foundation
 
 final class GoaTranceGenerator: NSObject, ObservableObject {
+    @Published var isRenderingSong = false
+    @Published var songURL: URL?
+    @Published var songError: String?
+
+    func exportSong() {
+        guard !isRenderingSong else { return }
+        isRenderingSong = true
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            do {
+                let url = FileManager.default.temporaryDirectory.appendingPathComponent("Solstice-Spiral-\(UUID().uuidString.prefix(8)).wav")
+                try GoaSong.write(to: url)
+                DispatchQueue.main.async { self?.songURL = url; self?.isRenderingSong = false }
+            } catch {
+                DispatchQueue.main.async { self?.songError = error.localizedDescription; self?.isRenderingSong = false }
+            }
+        }
+    }
     @Published var isPlaying = false
     @Published var currentStep = 0
     @Published var parameters: GoaTranceParameters?

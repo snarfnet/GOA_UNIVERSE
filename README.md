@@ -51,3 +51,15 @@ Then build and run in Xcode on an iOS simulator or device.
 - Build once in Xcode and set your Apple development team if signing asks for it.
 - Test with a short MP3 or WAV first.
 - If the simulator has audio glitches, try a physical iPhone. Real-time audio usually behaves better there.
+
+## Full-song mode (development update)
+
+The app can render and share **Solstice Spiral**, a fixed 180-second arrangement at 144 BPM in A minor, using its own BassOscillator, MelodyOscillator, PadOscillator and DrumSynthesizer through MasterMixer. It does not remix the selected source file. Output: 44.1 kHz / 16-bit / mono WAV.
+
+Arrangement: bars 1–16 intro, 17–48 development, 49–64 break, 65–96 peak, 97–108 outro. Drum noise is seeded and song events use a sample clock. The existing live pattern mode still uses its original timer; full-song export is the first enhancement, not a finished overhaul of live generation.
+
+Run the portable renderer with Swift:
+`swiftc -O GoaTranceParameters.swift Oscillators.swift Scripts/RenderSong.swift -o render-song`
+`./render-song Solstice-Spiral.wav`
+
+Export validates finite, bounded samples. Device audio, sharing and background behavior need real-device checks before publishing. The update does not upload or submit to App Store Connect.

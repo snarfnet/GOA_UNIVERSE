@@ -165,19 +165,3 @@ final class AudioAnalyzer: NSObject, ObservableObject {
     }
 }
 
-struct AudioAnalysisResult: Codable {
-    let filename: String
-    let duration: Double
-    let sampleRate: Int
-    let channels: Int
-    let estimatedBPM: Int
-    let estimatedKey: String
-    let frequencyBands: FrequencyBands
-    let analysisTimestamp: Date
-}
-
-struct FrequencyBands: Codable {
-    let low: Double
-    let mid: Double
-    let high: Double
-}

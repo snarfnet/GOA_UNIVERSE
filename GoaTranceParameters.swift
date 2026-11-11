@@ -155,3 +155,85 @@ struct FrequencyCharacter: Codable {
     let midAmount: Double
     let highAmount: Double
 }
+
+struct AudioAnalysisResult: Codable {
+    let filename: String
+    let duration: Double
+    let sampleRate: Int
+    let channels: Int
+    let estimatedBPM: Int
+    let estimatedKey: String
+    let frequencyBands: FrequencyBands
+    let analysisTimestamp: Date
+}
+
+struct FrequencyBands: Codable {
+    let low: Double
+    let mid: Double
+    let high: Double
+}
+
+// Fixed arrangement rendered with the application's original oscillators and mixer.
+// Musical events use the sample clock; rendering is reproducible from a fresh instance.
+enum GoaSong {
+    static let rate = 44_100
+    static let bpm = 144
+    static let bars = 108
+    static let frames = rate * 180
+
+    static func write(to url: URL) throws {
+        let analysis = AudioAnalysisResult(filename: "Solstice Spiral", duration: 180,
+            sampleRate: rate, channels: 1, estimatedBPM: bpm, estimatedKey: "A minor",
+            frequencyBands: FrequencyBands(low: 0.6, mid: 0.7, high: 0.45), analysisTimestamp: Date(timeIntervalSince1970: 0))
+        let mixer = MasterMixer(sampleRate: Double(rate))
+        mixer.setParameters(GoaTranceParameters.generateFromAnalysis(analysis))
+        let motif = [0, 7, 3, 12, 10, 7, 5, 3, 0, 12, 7, 15, 10, 5, 7, 3]
+        var nextStep = 0.0
+        var step = 0
+        var pcm = Data(capacity: frames * 2)
+        for frame in 0..<frames {
+            if Double(frame) >= nextStep {
+                let bar = step / 16
+                let beat = step % 16
+                let breakSection = (48..<64).contains(bar)
+                let outro = bar >= 96
+                let rhythm = bar >= 8 && !breakSection && bar < 104
+                if rhythm && beat % 4 == 0 { mixer.triggerKick() }
+                if rhythm && (beat % 4 == 2 || (bar >= 64 && beat % 2 == 1)) { mixer.triggerHihat() }
+                if rhythm && bar >= 24 && (beat == 4 || beat == 12 || (bar % 8 == 7 && beat >= 14)) { mixer.triggerSnare() }
+                if rhythm && beat % 4 != 0 {
+                    let bassNote = 33 + ((bar % 8 == 7 && beat >= 12) ? 7 : 0)
+                    mixer.triggerBass(frequency: frequency(bassNote))
+                }
+                if bar >= 16 && bar < 100 && (!outro || beat % 4 == 0) {
+                    let sparse = breakSection || bar < 32
+                    if !sparse || beat % 4 == 0 {
+                        let offset = (bar / 4) % 4
+                        let degree = motif[(beat + offset * 4) % 16]
+                        let register = (bar >= 80 && bar % 4 >= 2) ? 12 : 0
+                        mixer.triggerMelody(frequency: frequency(57 + degree + register))
+                    }
+                }
+                step += 1
+                nextStep += Double(rate) * 60 / Double(bpm) / 4
+            }
+            let edge = min(1, min(Double(frame) / Double(rate * 4), Double(frames - 1 - frame) / Double(rate * 8)))
+            let sample = Double(mixer.generateMixedSample()) * edge
+            guard sample.isFinite && abs(sample) <= 1 else { throw CocoaError(.fileWriteUnknown) }
+            var value = Int16((sample * 32767).rounded()).littleEndian
+            withUnsafeBytes(of: &value) { pcm.append(contentsOf: $0) }
+        }
+        var wav = Data()
+        func text(_ s: String) { wav.append(contentsOf: s.utf8) }
+        func u32(_ n: UInt32) { var v = n.littleEndian; withUnsafeBytes(of: &v) { wav.append(contentsOf: $0) } }
+        func u16(_ n: UInt16) { var v = n.littleEndian; withUnsafeBytes(of: &v) { wav.append(contentsOf: $0) } }
+        text("RIFF"); u32(UInt32(pcm.count + 36)); text("WAVEfmt "); u32(16)
+        u16(1); u16(1); u32(UInt32(rate)); u32(UInt32(rate * 2)); u16(2); u16(16)
+        text("data"); u32(UInt32(pcm.count)); wav.append(pcm)
+        try wav.write(to: url, options: .atomic)
+    }
+
+    private static func frequency(_ note: Int) -> Double {
+        440 * pow(2, Double(note - 69) / 12)
+    }
+}
