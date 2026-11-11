@@ -6,18 +6,19 @@ on:
       action:
         description: ASC action
         type: choice
-        options: [inspect, upload]
+        options: [inspect, prepare, upload]
         default: inspect
 
 jobs:
   inspect:
-    if: inputs.action == 'inspect'
+    if: inputs.action != 'upload'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - run: pip install PyJWT cryptography requests
       - run: python3 scripts/asc_release.py
         env:
+          ASC_ACTION: ${{ inputs.action }}
           APP_STORE_CONNECT_API_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_BASE64 }}
           APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
           APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}
