@@ -2,9 +2,28 @@ name: iOS Upload
 
 on:
   workflow_dispatch:
+    inputs:
+      action:
+        description: ASC action
+        type: choice
+        options: [inspect, prepare, upload, submit]
+        default: inspect
 
 jobs:
+  inspect:
+    if: inputs.action != 'upload'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install PyJWT cryptography requests
+      - run: python3 scripts/asc_release.py
+        env:
+          ASC_ACTION: ${{ inputs.action }}
+          APP_STORE_CONNECT_API_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_BASE64 }}
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          APP_STORE_CONNECT_API_KEY_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ISSUER_ID }}
   upload:
+    if: inputs.action == 'upload'
     runs-on: macos-26
     timeout-minutes: 60
 

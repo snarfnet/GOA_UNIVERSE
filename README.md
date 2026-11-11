@@ -51,3 +51,21 @@ Then build and run in Xcode on an iOS simulator or device.
 - Build once in Xcode and set your Apple development team if signing asks for it.
 - Test with a short MP3 or WAV first.
 - If the simulator has audio glitches, try a physical iPhone. Real-time audio usually behaves better there.
+
+## Full-song mode (development update)
+
+The app can render and share **Solstice Spiral**, a fixed 180-second arrangement at 144 BPM in A minor, using its own BassOscillator, MelodyOscillator, PadOscillator and DrumSynthesizer through MasterMixer. It does not remix the selected source file. Output: 44.1 kHz / 16-bit / mono WAV.
+
+Arrangement: bars 1–16 intro, 17–48 development, 49–64 break, 65–96 peak, 97–108 outro. Drum noise is seeded and song events use a sample clock. The existing live pattern mode still uses its original timer; full-song export is the first enhancement, not a finished overhaul of live generation.
+
+Run the portable renderer with Swift:
+`swiftc -O GoaTranceParameters.swift Oscillators.swift Scripts/RenderSong.swift -o render-song`
+`./render-song Solstice-Spiral.wav`
+
+Export validates finite, bounded samples. Device audio, sharing and background behavior need real-device checks before publishing. The update does not upload or submit to App Store Connect.
+
+## Sound banks
+
+Select Classic, Acid, or Celestial before playback or export. Acid adds a resonant harmonic bass, FM lead, and detuned fifth pad. Celestial adds a soft sub, glass bell lead, and minor-ninth pad. The original three sounds remain in Classic; drums are unchanged. These are original synthesis voices, not licensed hardware emulations. Bank selection applies on the next playback and is captured when export starts.
+
+Standalone example: `goa-song output.wav Celestial`. The 108-bar arrangement remains the same so timbres can be compared.

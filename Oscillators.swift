@@ -1,6 +1,22 @@
 import Foundation
 
+enum GoaSoundBank: String, CaseIterable, Identifiable {
+    case classic = "Classic"
+    case acid = "Acid"
+    case celestial = "Celestial"
+    var id: String { rawValue }
+    var detail: String {
+        switch self {
+        case .classic: return "Original bass · Triangle lead · Harmonic pad"
+        case .acid: return "Resonant bass · Psy FM lead · Fifth shimmer"
+        case .celestial: return "Soft sub · Glass bell · Minor ninth cloud"
+        }
+    }
+}
+
+
 final class BassOscillator {
+    var soundBank: GoaSoundBank = .classic
     private var frequency: Double = 55
     private var intensity: Double = 0.8
     private var phase: Double = 0
@@ -52,13 +68,28 @@ final class BassOscillator {
         let saw = 2.0 * (phase - floor(phase + 0.5))
         let sine = sin(phase * 2.0 * .pi)
         let acidEdge = sin(phase * 2.0 * .pi * 3.0) * 0.18
-        let sample = saw * 0.55 + sine * 0.35 + acidEdge
+        let sample: Double
+        switch soundBank {
+        case .classic: sample = saw * 0.55 + sine * 0.35 + acidEdge
+        case .acid:
+            // A decaying harmonic emphasis, with harmonics capped below Nyquist.
+            let brightness = 1 + 7 * exp(-envelopePhase * 14)
+            var tone = 0.0
+            for h in 1...12 where Double(h) * frequency < sampleRate * 0.45 {
+                let emphasis = exp(-pow((Double(h) - brightness) / 2, 2))
+                tone += sin(phase * 2 * .pi * Double(h)) * (0.25 + emphasis) / Double(h)
+            }
+            sample = tanh(tone * 1.8) * 0.9
+        case .celestial:
+            sample = sine * 0.85 + sin(phase * 4 * .pi) * 0.12
+        }
 
         return Float(sample * envelope * intensity * 0.34)
     }
 }
 
 final class MelodyOscillator {
+    var soundBank: GoaSoundBank = .classic
     private var frequency: Double = 440
     private var complexity: Double = 0.5
     private var phase: Double = 0
@@ -109,11 +140,23 @@ final class MelodyOscillator {
 
         let triangle = abs(4.0 * (phase - floor(phase + 0.25))) - 2.0
         let harmonic = sin(phase * 4.0 * .pi) * 0.26
-        return Float((triangle * 0.56 + harmonic) * envelope * 0.22)
+        let angle = phase * 2 * Double.pi
+        let tone: Double
+        switch soundBank {
+        case .classic: tone = triangle * 0.56 + harmonic
+        case .acid:
+            let index = min(2.2, sampleRate / max(frequency, 1) / 16) * exp(-envelopePhase * 4)
+            tone = sin(angle + sin(angle * 2) * index) * 0.85
+        case .celestial:
+            let partial = frequency * 2.756 < sampleRate * 0.45 ? sin(angle * 2.756) * exp(-envelopePhase * 8) * 0.35 : 0
+            tone = sin(angle) * exp(-envelopePhase * 3) + partial
+        }
+        return Float(tone * envelope * 0.22)
     }
 }
 
 final class PadOscillator {
+    var soundBank: GoaSoundBank = .classic
     private var intensity: Double = 0.45
     private var reverbAmount: Double = 0.55
     private var delayAmount: Double = 0.4
@@ -137,12 +180,13 @@ final class PadOscillator {
     }
 
     func generatePadSound(baseFrequency: Double) -> Float {
-        let frequencies = [
-            baseFrequency,
-            baseFrequency * 1.5,
-            baseFrequency * 2.0,
-            baseFrequency * 2.5
-        ]
+        let ratios: [Double]
+        switch soundBank {
+        case .classic: ratios = [1, 1.5, 2, 2.5]
+        case .acid: ratios = [1, 1.4983, 2.003, 2.9966]
+        case .celestial: ratios = [1, pow(2, 3.0 / 12), pow(2, 7.0 / 12), pow(2, 14.0 / 12)]
+        }
+        let frequencies = ratios.map { baseFrequency * $0 }
 
         var sample: Float = 0
         for index in frequencies.indices {
@@ -172,6 +216,11 @@ final class PadOscillator {
 }
 
 final class DrumSynthesizer {
+    private var noiseState: UInt32 = 0x13579BDF
+    private func noiseSample() -> Float {
+        noiseState = noiseState &* 1664525 &+ 1013904223
+        return Float(Double(noiseState) / Double(UInt32.max) * 2 - 1)
+    }
     private var kickDecay: Double = 0.42
     private var snareDecay: Double = 0.24
     private var hihatDecay: Double = 0.1
@@ -237,7 +286,7 @@ final class DrumSynthesizer {
             snareActive = false
         }
 
-        return Float.random(in: -1...1) * Float(envelope) * 0.38
+        return noiseSample() * Float(envelope) * 0.38
     }
 
     func generateHihatSample() -> Float {
@@ -250,7 +299,7 @@ final class DrumSynthesizer {
             hihatActive = false
         }
 
-        let noise = Float.random(in: -1...1)
+        let noise = noiseSample()
         return (noise - noise * 0.18) * Float(envelope) * 0.28
     }
 }
@@ -275,6 +324,12 @@ final class MasterMixer {
         pad.setParameters(params)
         drums.setParameters(params)
         masterGain = Float(0.62 + params.overallIntensity * 0.22)
+    }
+
+    func setSoundBank(_ bank: GoaSoundBank) {
+        bass.soundBank = bank
+        melody.soundBank = bank
+        pad.soundBank = bank
     }
 
     func generateMixedSample() -> Float {
