@@ -63,3 +63,9 @@ Run the portable renderer with Swift:
 `./render-song Solstice-Spiral.wav`
 
 Export validates finite, bounded samples. Device audio, sharing and background behavior need real-device checks before publishing. The update does not upload or submit to App Store Connect.
+
+## Sound banks
+
+Select Classic, Acid, or Celestial before playback or export. Acid adds a resonant harmonic bass, FM lead, and detuned fifth pad. Celestial adds a soft sub, glass bell lead, and minor-ninth pad. The original three sounds remain in Classic; drums are unchanged. These are original synthesis voices, not licensed hardware emulations. Bank selection applies on the next playback and is captured when export starts.
+
+Standalone example: `goa-song output.wav Celestial`. The 108-bar arrangement remains the same so timbres can be compared.

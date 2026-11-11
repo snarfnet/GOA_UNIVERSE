@@ -24,6 +24,18 @@ struct ContentView: View {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 16) {
                     header
+                    GoaPanel(title: "SOUND BANK") {
+                        Picker("Sound bank", selection: $generator.soundBank) {
+                            ForEach(GoaSoundBank.allCases) { bank in
+                                Text(bank.rawValue).tag(bank)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                        .disabled(generator.isPlaying || generator.isRenderingSong)
+                        Text(generator.soundBank.detail).font(.caption).foregroundColor(.white)
+                        Text("Applies to playback and full-song export. Stop playback to change sounds.")
+                            .font(.caption).foregroundColor(.white.opacity(0.75))
+                    }
                     GoaPanel(title: "FULL SONG · SOLSTICE SPIRAL") {
                         Text("144 BPM · A minor · 3 minutes. A composed demo with intro, development, break, peak and outro. Uses the built-in synths; independent of the selected audio file.")
                             .font(.caption).foregroundColor(.white)

@@ -181,12 +181,13 @@ enum GoaSong {
     static let bars = 108
     static let frames = rate * 180
 
-    static func write(to url: URL) throws {
+    static func write(to url: URL, soundBank: GoaSoundBank = .classic) throws {
         let analysis = AudioAnalysisResult(filename: "Solstice Spiral", duration: 180,
             sampleRate: rate, channels: 1, estimatedBPM: bpm, estimatedKey: "A minor",
             frequencyBands: FrequencyBands(low: 0.6, mid: 0.7, high: 0.45), analysisTimestamp: Date(timeIntervalSince1970: 0))
         let mixer = MasterMixer(sampleRate: Double(rate))
         mixer.setParameters(GoaTranceParameters.generateFromAnalysis(analysis))
+        mixer.setSoundBank(soundBank)
         let motif = [0, 7, 3, 12, 10, 7, 5, 3, 0, 12, 7, 15, 10, 5, 7, 3]
         var nextStep = 0.0
         var step = 0

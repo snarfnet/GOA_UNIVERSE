@@ -3,6 +3,7 @@ import AudioToolbox
 import Foundation
 
 final class GoaTranceGenerator: NSObject, ObservableObject {
+    @Published var soundBank: GoaSoundBank = .classic
     @Published var isRenderingSong = false
     @Published var songURL: URL?
     @Published var songError: String?
@@ -10,10 +11,12 @@ final class GoaTranceGenerator: NSObject, ObservableObject {
     func exportSong() {
         guard !isRenderingSong else { return }
         isRenderingSong = true
+        songError = nil
+        let selectedBank = soundBank
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             do {
                 let url = FileManager.default.temporaryDirectory.appendingPathComponent("Solstice-Spiral-\(UUID().uuidString.prefix(8)).wav")
-                try GoaSong.write(to: url)
+                try GoaSong.write(to: url, soundBank: selectedBank)
                 DispatchQueue.main.async { self?.songURL = url; self?.isRenderingSong = false }
             } catch {
                 DispatchQueue.main.async { self?.songError = error.localizedDescription; self?.isRenderingSong = false }
@@ -59,6 +62,9 @@ final class GoaTranceGenerator: NSObject, ObservableObject {
             setupAudio()
         }
 
+        engine?.pause()
+        masterMixer.setSoundBank(soundBank)
+        do { try engine?.start() } catch { songError = error.localizedDescription; return }
         isPlaying = true
         stepIndex = 0
         currentStep = 0
