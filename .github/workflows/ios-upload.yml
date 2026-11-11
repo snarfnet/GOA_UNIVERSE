@@ -6,7 +6,7 @@ on:
       action:
         description: ASC action
         type: choice
-        options: [inspect, prepare, upload]
+        options: [inspect, prepare, upload, submit]
         default: inspect
 
 jobs:

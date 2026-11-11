@@ -30,3 +30,30 @@ if os.environ.get('ASC_ACTION') == 'prepare':
 print('LUMI_STATUS')
 for x in api('/apps/6831554518/appStoreVersions?limit=10'):
     print('LUMI_VERSION',x['id'],json.dumps(x['attributes']))
+if os.environ.get('ASC_ACTION') == 'submit':
+    versions=api('/apps/'+app['id']+'/appStoreVersions?limit=20')
+    target=next(x for x in versions if x['attributes']['versionString']=='1.1')
+    assert target['id']=='196b5810-291e-4da0-b24b-7911e5cbc9c7'
+    builds=api('/builds?filter[app]='+app['id']+'&filter[version]=3')
+    assert len(builds)==1 and builds[0]['attributes']['processingState']=='VALID', 'Build 3 is not yet valid'
+    build=builds[0]
+    pre=api('/builds/'+build['id']+'/preReleaseVersion')
+    assert pre['attributes']['version']=='1.1'
+    if build['attributes'].get('usesNonExemptEncryption') is None:
+        api('/builds/'+build['id'],'PATCH',{'data':{'type':'builds','id':build['id'],'attributes':{'usesNonExemptEncryption':False}}})
+    api('/appStoreVersions/'+target['id']+'/relationships/build','PATCH',{'data':{'type':'builds','id':build['id']}})
+    review=api('/appStoreVersions/'+target['id']+'/appStoreReviewDetail')
+    if review:
+        notes=(review['attributes'].get('notes') or '')+'\nVersion 1.1: Choose Classic, Acid or Celestial in SOUND BANK. EXPORT FULL SONG WAV renders a fixed three-minute demo arrangement and opens the share sheet. Source audio import is independent of this demo export.'
+        api('/appStoreReviewDetails/'+review['id'],'PATCH',{'data':{'type':'appStoreReviewDetails','id':review['id'],'attributes':{'notes':notes}}})
+    submissions=api('/apps/'+app['id']+'/reviewSubmissions')
+    submission=next((x for x in submissions if x['attributes']['state']=='READY_FOR_REVIEW'),None)
+    if submission is None:
+        submission=api('/reviewSubmissions','POST',{'data':{'type':'reviewSubmissions','attributes':{'platform':'IOS'},'relationships':{'app':{'data':{'type':'apps','id':app['id']}}}}})
+    items=api('/reviewSubmissions/'+submission['id']+'/items')
+    if not items:
+        api('/reviewSubmissionItems','POST',{'data':{'type':'reviewSubmissionItems','relationships':{'reviewSubmission':{'data':{'type':'reviewSubmissions','id':submission['id']}},'appStoreVersion':{'data':{'type':'appStoreVersions','id':target['id']}}}}})
+    else:
+        assert len(items)==1 and items[0]['relationships']['appStoreVersion']['data']['id']==target['id'], 'Unexpected items in review submission'
+    result=api('/reviewSubmissions/'+submission['id'],'PATCH',{'data':{'type':'reviewSubmissions','id':submission['id'],'attributes':{'submitted':True}}})
+    print('SUBMISSION_RESULT',result['id'],result['attributes']['state'])
